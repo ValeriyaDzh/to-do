@@ -6,6 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.users.models import User
+from src.tasks.models import Task
 from src.database import Base
 from src.config import settings
 
