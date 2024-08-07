@@ -1,0 +1,17 @@
+services:
+
+  db:
+    image: postgres:15.7
+    container_name: todo_db
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    ports:
+      - ${DB_PORT}:${DB_PORT}
+    volumes:
+      - todo_data:/var/lib/postgresql/data
+
+volumes:
+  todo_data:
