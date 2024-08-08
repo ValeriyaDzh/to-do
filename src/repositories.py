@@ -34,20 +34,26 @@ class BaseRepository:
         except Exception as e:
             logger.error(f"Error saving entity in database: {e}")
 
-    async def get(self, key: str, value: str | bool) -> Any:
+    async def get(self, key: str, value: str | bool, all: bool = False) -> Any:
         """
         Get entity from the database by a specified field.
 
         :param key: field name.
         :param value: field value.
-        :return: the entity if found, else None.
+        :param all: whether to retrieve all matching entities. Defaults to `False`
+        :return: a list of entities if `all` is True, else a single entity or None.
         :raises DatabaseException: if a database error occurs.
         """
         try:
-            entity = await self.session.execute(
+            result = await self.session.execute(
                 select(self.model).where((getattr(self.model, key) == value))
             )
-            return entity.scalar_one_or_none()
+            if all:
+                entities = result.scalars().all()
+                logger.debug(f"Entities from {value}: {entities}")
+                return entities
+
+            return result.scalar_one_or_none()
 
         except Exception as e:
             logger.error(f"Error get entity from database: {e}")
