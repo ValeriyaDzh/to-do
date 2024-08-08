@@ -6,7 +6,7 @@ from httpx import AsyncClient
 async def test_signup(api_client: AsyncClient):
     user_data = {"login": "john_doe", "password": "12345678"}
 
-    response = await api_client.post("/sign-up", json=user_data)
+    response = await api_client.post("api/sign-up", json=user_data)
     assert response.status_code == 201
 
     data = response.json()
@@ -46,7 +46,7 @@ async def test_signup(api_client: AsyncClient):
 )
 async def test_signup_exeptions(api_client: AsyncClient, user_data, status, detail):
 
-    response = await api_client.post("/sign-up", json=user_data)
+    response = await api_client.post("api/sign-up", json=user_data)
     assert response.status_code == status
 
     data = response.json()
@@ -57,7 +57,7 @@ async def test_signup_exeptions(api_client: AsyncClient, user_data, status, deta
 async def test_signin(api_client: AsyncClient):
     user_data = {"username": "john_doe", "password": "12345678"}
 
-    response = await api_client.post("/sign-in", data=user_data)
+    response = await api_client.post("api/sign-in", data=user_data)
     assert response.status_code == 200
     assert "access_token" in response.json()
     assert response.json()["token_type"] == "bearer"
@@ -73,7 +73,7 @@ async def test_signin(api_client: AsyncClient):
 )
 async def test_signin_exeptions(api_client: AsyncClient, user_data):
 
-    response = await api_client.post("/sign-in", data=user_data)
+    response = await api_client.post("api/sign-in", data=user_data)
     assert response.status_code == 401
 
     data = response.json()
