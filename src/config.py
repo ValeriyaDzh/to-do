@@ -25,6 +25,11 @@ class DatabaseSettings(BaseSettings):
         )
 
 
+class TestDatabaseSettings(DatabaseSettings):
+
+    model_config = SettingsConfigDict(extra="ignore", env_prefix="TEST_DB_")
+
+
 class JWTSettings(BaseSettings):
 
     SECRET_KEY: SecretStr
@@ -38,7 +43,7 @@ class LoggerSettings(BaseSettings):
 
     LEVEL: str
     FILE: str
-    IGNORED_LOGGERS: list[str] = ["passlib", "asyncio", "sqlalchemy.engine"]
+    IGNORED_LOGGERS: list[str] = ["passlib", "asyncio", "sqlalchemy", "multipart"]
     IGNORED_LOGGERS_LEVEL: str = "ERROR"
 
     model_config = SettingsConfigDict(env_prefix="LOG_", extra="ignore")
@@ -85,6 +90,7 @@ class Settings(BaseSettings):
     db: DatabaseSettings = DatabaseSettings()
     log: LoggerSettings = LoggerSettings()
     jwt: JWTSettings = JWTSettings()
+    test_db: TestDatabaseSettings = TestDatabaseSettings()
 
 
 settings = Settings()
