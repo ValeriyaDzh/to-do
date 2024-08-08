@@ -1,4 +1,5 @@
 import pytest
+from pytest_mock import mocker
 import logging
 from typing import AsyncGenerator
 
@@ -11,6 +12,8 @@ from httpx import AsyncClient
 from src.config import settings
 from src.database import Base, get_async_session
 from src.main import app
+from src.tasks.models import Task
+from src.users.auth import JWTToken
 from src.users.models import User
 
 
@@ -35,9 +38,16 @@ async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
 app.dependency_overrides[get_async_session] = override_get_async_session
 
 TEST_USER = {
-    "id": "3918e5a0-04fc-484b-adc2-fd3c8a90b5nn",
+    "id": "1c9e02ef-f0b0-4336-beb5-aade2e704600",
     "login": "test",
-    "password": "12345678",
+    "hashed_password": "12345678",
+}
+
+TEST_TASK = {
+    "id": "1c9e02ef-f0b0-4336-beb5-aade2e704547",
+    "title": "test_task",
+    "description": "the_best_of_the_best",
+    "author_id": "1c9e02ef-f0b0-4336-beb5-aade2e704600",
 }
 
 
@@ -48,17 +58,18 @@ async def prepear_database():
         await conn.run_sync(Base.metadata.create_all)
     logger.debug("Database tables created successfully.")
 
-    async with test_async_sessionmaker() as session:
-        try:
-            logger.debug(f"Inserting test in {User}...")
-            add_data = User(**TEST_USER)
-            session.add(add_data)
-            await session.commit()
-            logger.debug(f"Test {User} data inserted successfully.")
-        except Exception as e:
-            logger.error(f"Error inserting test: {e}")
-            await session.rollback()
-            logger.info("Rolled back transaction.")
+    for model, data in ((User, TEST_USER), (Task, TEST_TASK)):
+        async with test_async_sessionmaker() as session:
+            try:
+                logger.debug(f"Inserting test in {model}...")
+                add_data = model(**data)
+                session.add(add_data)
+                await session.commit()
+                logger.debug(f"Test {model} data inserted successfully.")
+            except Exception as e:
+                logger.error(f"Error inserting test: {e}")
+                await session.rollback()
+                logger.info("Rolled back transaction.")
     logger.debug("Database preparation complete.")
 
     yield
@@ -81,3 +92,8 @@ client = TestClient(app)
 async def api_client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(app=app, base_url="http://test") as api_client:
         yield api_client
+
+
+@pytest.fixture
+def mock_jwt_decode(mocker):
+    return mocker.patch.object(JWTToken, "decode")

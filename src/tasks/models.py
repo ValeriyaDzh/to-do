@@ -9,6 +9,9 @@ class Task(Base):
 
     __tablename__ = "task"
 
+    def __repr__(self) -> str:
+        return f"Task: {self.id}"
+
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,

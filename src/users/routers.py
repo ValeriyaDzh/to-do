@@ -7,10 +7,10 @@ from src.users.dependencies import get_user_service, get_current_user
 from src.users.schemas import CreateUser, ShowUser, Token
 from src.users.services import UserService
 
-users_router = APIRouter(tags=["User"])
+user_router = APIRouter(tags=["User"])
 
 
-@users_router.post(
+@user_router.post(
     "/sign-up", status_code=status.HTTP_201_CREATED, response_model=ShowUser
 )
 async def create_user(
@@ -19,7 +19,7 @@ async def create_user(
     return await user_service.create(user_data)
 
 
-@users_router.post("/sign-in", status_code=status.HTTP_200_OK, response_model=Token)
+@user_router.post("/sign-in", status_code=status.HTTP_200_OK, response_model=Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
@@ -33,3 +33,11 @@ async def login_for_access_token(
 
     else:
         raise InvalidCredentialsException("Incorrect login or password")
+
+
+@user_router.delete("/user", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user=Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
+):
+    return await user_service.remove(user.id)
