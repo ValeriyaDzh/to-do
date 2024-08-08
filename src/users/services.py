@@ -21,7 +21,7 @@ class UserService(BaseRepository):
 
         if await self.get_by_login(data.login):
             logger.error(f"User with {data.login} already exist")
-            raise UserAlreadyExists
+            raise UserAlreadyExists("User with this login already exists")
 
         data_dict = data.model_dump()
         password = data_dict.pop("password")
