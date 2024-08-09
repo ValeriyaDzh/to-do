@@ -1,8 +1,10 @@
+from uuid import UUID
+
 from fastapi import APIRouter, status, Depends
 
 from src.tasks.dependencies import get_task_service, valid_author_tasks
 from src.tasks.models import Task
-from src.tasks.schemas import CreateTask, ShowTask, UpdateTask
+from src.tasks.schemas import CreateTask, ShowTask, UpdateTask, Permission
 from src.tasks.services import TaskService
 from src.users.dependencies import get_current_user
 from src.users.models import User
@@ -52,3 +54,31 @@ async def delete_task(
     task_service: TaskService = Depends(get_task_service),
 ):
     return await task_service.remove(task.id)
+
+
+@task_router.post("/task/{task_id}/permissions")
+async def add_task_permission(
+    permission: Permission,
+    task=Depends(valid_author_tasks),
+    task_service: TaskService = Depends(get_task_service),
+):
+    await task_service.permission.add(
+        task.id, permission.user_id, permission.permission
+    )
+    return {
+        "message": f"Add {permission.permission} permission to user {permission.user_id} for task {task.id}."
+    }
+
+
+@task_router.delete("/task/{task_id}/permissions")
+async def delete_task_permission(
+    permission: Permission,
+    task=Depends(valid_author_tasks),
+    task_service: TaskService = Depends(get_task_service),
+):
+    await task_service.permission.delete(
+        task.id, permission.user_id, permission.permission
+    )
+    return {
+        "message": f"Delete {permission.permission} permission to user {permission.user_id} for task {task.id}."
+    }
