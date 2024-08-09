@@ -22,7 +22,7 @@ async def get_user_service(session: AsyncSession = Depends(get_async_session)):
 async def get_current_user(
     token: str = Depends(ouath2_schema),
     user_service: UserService = Depends(get_user_service),
-):
+) -> User:
     try:
         playload = JWTToken.decode(token)
         login = playload.get("sub")
