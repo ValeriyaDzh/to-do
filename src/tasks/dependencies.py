@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_async_session
-from src.exceptions import NotFoundException, AccessRightsException
+from src.exceptions import NotFoundException, PermissionDeniedException
 from src.tasks.models import Task
 from src.tasks.services import TaskService
 from src.users.dependencies import get_current_user
@@ -30,6 +30,6 @@ async def valid_author_tasks(
     task: Task = Depends(valid_task_id),
 ) -> Task:
     if task.author_id != current_user.id:
-        raise AccessRightsException
+        raise PermissionDeniedException
 
     return task
