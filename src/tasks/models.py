@@ -1,8 +1,19 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, ForeignKey
+
+from sqlalchemy import Column, String, Boolean, Table, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from src.database import Base
+
+
+task_permissions = Table(
+    "task_permissions",
+    Base.metadata,
+    Column("user_id", UUID, ForeignKey("user.id")),
+    Column("task_id", UUID, ForeignKey("task.id")),
+    Column("permission", String, nullable=False),
+)
 
 
 class Task(Base):
@@ -24,4 +35,9 @@ class Task(Base):
     is_done = Column(Boolean, default=False)
     author_id = Column(
         UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+
+    author = relationship("User", back_populates="tasks")
+    permitted_users = relationship(
+        "User", secondary=task_permissions, back_populates="task_permissions"
     )
