@@ -50,6 +50,12 @@ TEST_TASK = {
     "author_id": "1c9e02ef-f0b0-4336-beb5-aade2e704600",
 }
 
+TEST_TASK2 = {
+    "id": "4c9e02ef-f8b8-4336-beb5-aade2e704547",
+    "title": "test_task2",
+    "author_id": "1c9e02ef-f0b0-4336-beb5-aade2e704600",
+}
+
 
 @pytest.fixture(autouse=True, scope="session")
 async def prepear_database():
@@ -58,7 +64,7 @@ async def prepear_database():
         await conn.run_sync(Base.metadata.create_all)
     logger.debug("Database tables created successfully.")
 
-    for model, data in ((User, TEST_USER), (Task, TEST_TASK)):
+    for model, data in ((User, TEST_USER), (Task, TEST_TASK), (Task, TEST_TASK2)):
         async with test_async_sessionmaker() as session:
             try:
                 logger.debug(f"Inserting test in {model}...")
