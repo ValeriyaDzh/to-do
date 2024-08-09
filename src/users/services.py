@@ -2,9 +2,9 @@ import logging
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.exceptions import AlreadyExistsException
 from src.repositories import BaseRepository
 from src.users.auth import Password
-from src.users.exceptions import UserAlreadyExists
 from src.users.models import User
 from src.users.schemas import CreateUser
 
@@ -21,7 +21,7 @@ class UserService(BaseRepository):
 
         if await self.get_by_login(data.login):
             logger.error(f"User with {data.login} already exist")
-            raise UserAlreadyExists("User with this login already exists")
+            raise AlreadyExistsException("User with this login already exists")
 
         data_dict = data.model_dump()
         password = data_dict.pop("password")
@@ -33,6 +33,7 @@ class UserService(BaseRepository):
 
     async def get_by_login(self, user_login: str) -> User | None:
         user = await self.get("login", user_login)
+
         return user
 
     async def remove(self, user_id: UUID):

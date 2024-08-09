@@ -80,7 +80,7 @@ async def test_edit_task(api_client: AsyncClient, mock_jwt_decode):
         (
             "1c9e02ef-f0b0-4336-beb5-aade2e704547",
             403,
-            "There are no rights for changes",
+            "There are no permission for changes",
         ),
     ],
 )

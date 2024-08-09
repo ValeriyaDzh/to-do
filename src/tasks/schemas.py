@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from pydantic import BaseModel, field_validator
 
 from src.exceptions import UnprocessableException
@@ -25,9 +26,24 @@ class ShowTask(TaskBase):
     is_done: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UpdateTask(TaskBase):
     title: str | None = None
     is_done: bool | None = None
+
+
+class Permission(BaseModel):
+    user_login: str
+    permission: str
+
+    @field_validator("permission")
+    def permission_validator(value):
+        if value not in ("read", "edit"):
+            raise UnprocessableException("Valid permission: read or edit")
+
+        return value
+
+    class Config:
+        from_attributes = True

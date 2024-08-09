@@ -1,11 +1,15 @@
+from uuid import UUID
+
 from fastapi import APIRouter, status, Depends
 
-from src.tasks.dependencies import get_task_service, valid_author_tasks
+from src.tasks.dependencies import get_task_service, valid_author_tasks, valid_task_id
+from src.exceptions import PermissionDeniedException, NotFoundException
 from src.tasks.models import Task
-from src.tasks.schemas import CreateTask, ShowTask, UpdateTask
+from src.tasks.schemas import CreateTask, ShowTask, UpdateTask, Permission
 from src.tasks.services import TaskService
-from src.users.dependencies import get_current_user
+from src.users.dependencies import get_current_user, get_user_service
 from src.users.models import User
+from src.users.services import UserService
 
 
 task_router = APIRouter(tags=["Task"])
@@ -18,7 +22,11 @@ async def users_tasks(
     user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service),
 ):
-    return await task_service.get_all(user.id)
+    user_tasks = await task_service.get_all(user.id)
+    permissions_tasks = await task_service.get_all_read(user.login)
+    all_tasks = {task.id: task for task in user_tasks + permissions_tasks}.values()
+
+    return all_tasks
 
 
 @task_router.post(
@@ -37,10 +45,16 @@ async def create_task(
 )
 async def edit_task(
     task_data: UpdateTask,
-    task: Task = Depends(valid_author_tasks),
+    user: User = Depends(get_current_user),
+    task: Task = Depends(valid_task_id),
     task_service: TaskService = Depends(get_task_service),
 ):
-    return await task_service.update(task.id, task_data)
+    if task.author_id == user.id or await task_service.permission.get(
+        task.id, user.login, "edit"
+    ):
+        return await task_service.update(task.id, task_data)
+    else:
+        raise PermissionDeniedException
 
 
 @task_router.delete(
@@ -52,3 +66,41 @@ async def delete_task(
     task_service: TaskService = Depends(get_task_service),
 ):
     return await task_service.remove(task.id)
+
+
+@task_router.post("/task/{task_id}/permissions")
+async def add_task_permission(
+    permission: Permission,
+    task=Depends(valid_author_tasks),
+    task_service: TaskService = Depends(get_task_service),
+    user_service: UserService = Depends(get_user_service),
+):
+    user = await user_service.get_by_login(permission.user_login)
+    if user:
+        await task_service.permission.add(
+            task.id, permission.user_login, permission.permission
+        )
+        return {
+            "message": f"Add {permission.permission} permission to user {permission.user_login} for task {task.id}."
+        }
+    else:
+        raise NotFoundException(f"User with id: {permission.user_login} does not exist")
+
+
+@task_router.delete("/task/{task_id}/permissions")
+async def delete_task_permission(
+    permission: Permission,
+    task=Depends(valid_author_tasks),
+    task_service: TaskService = Depends(get_task_service),
+    user_service: UserService = Depends(get_user_service),
+):
+    user = await user_service.get_by_login(permission.user_login)
+    if user:
+        await task_service.permission.delete(
+            task.id, permission.user_login, permission.permission
+        )
+        return {
+            "message": f"Delete {permission.permission} permission to user {permission.user_login} for task {task.id}."
+        }
+    else:
+        raise NotFoundException(f"User with id: {permission.user_login} does not exist")
