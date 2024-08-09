@@ -23,7 +23,7 @@ async def users_tasks(
     task_service: TaskService = Depends(get_task_service),
 ):
     user_tasks = await task_service.get_all(user.id)
-    permissions_tasks = await task_service.get_all_read(user.id)
+    permissions_tasks = await task_service.get_all_read(user.login)
     all_tasks = {task.id: task for task in user_tasks + permissions_tasks}.values()
 
     return all_tasks
@@ -50,7 +50,7 @@ async def edit_task(
     task_service: TaskService = Depends(get_task_service),
 ):
     if task.author_id == user.id or task_service.permission.get(
-        task.id, user.id, "edit"
+        task.id, user.login, "edit"
     ):
         return await task_service.update(task.id, task_data)
     else:
@@ -75,16 +75,16 @@ async def add_task_permission(
     task_service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
 ):
-    user = await user_service.get_by_id(permission.user_id)
+    user = await user_service.get_by_login(permission.user_login)
     if user:
         await task_service.permission.add(
-            task.id, permission.user_id, permission.permission
+            task.id, permission.user_login, permission.permission
         )
         return {
-            "message": f"Add {permission.permission} permission to user {permission.user_id} for task {task.id}."
+            "message": f"Add {permission.permission} permission to user {permission.user_login} for task {task.id}."
         }
     else:
-        raise NotFoundException(f"User with id: {permission.user_id} does not exist")
+        raise NotFoundException(f"User with id: {permission.user_login} does not exist")
 
 
 @task_router.delete("/task/{task_id}/permissions")
@@ -94,13 +94,13 @@ async def delete_task_permission(
     task_service: TaskService = Depends(get_task_service),
     user_service: UserService = Depends(get_user_service),
 ):
-    user = await user_service.get_by_id(permission.user_id)
+    user = await user_service.get_by_login(permission.user_login)
     if user:
         await task_service.permission.delete(
-            task.id, permission.user_id, permission.permission
+            task.id, permission.user_login, permission.permission
         )
         return {
-            "message": f"Delete {permission.permission} permission to user {permission.user_id} for task {task.id}."
+            "message": f"Delete {permission.permission} permission to user {permission.user_login} for task {task.id}."
         }
     else:
-        raise NotFoundException(f"User with id: {permission.user_id} does not exist")
+        raise NotFoundException(f"User with id: {permission.user_login} does not exist")

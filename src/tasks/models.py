@@ -10,7 +10,7 @@ from src.database import Base
 task_permissions = Table(
     "task_permissions",
     Base.metadata,
-    Column("user_id", UUID, ForeignKey("user.id", ondelete="CASCADE")),
+    Column("user_login", String, ForeignKey("user.login", ondelete="CASCADE")),
     Column("task_id", UUID, ForeignKey("task.id", ondelete="CASCADE")),
     Column("permission", String, nullable=False),
 )

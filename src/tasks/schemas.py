@@ -35,7 +35,7 @@ class UpdateTask(TaskBase):
 
 
 class Permission(BaseModel):
-    user_id: UUID
+    user_login: str
     permission: str
 
     @field_validator("permission")

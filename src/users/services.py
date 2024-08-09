@@ -36,10 +36,5 @@ class UserService(BaseRepository):
 
         return user
 
-    async def get_by_id(self, user_id: UUID) -> User | None:
-        user = await self.get("id", user_id)
-
-        return user
-
     async def remove(self, user_id: UUID):
         await self.delete(user_id)

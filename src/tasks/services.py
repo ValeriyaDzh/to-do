@@ -35,8 +35,8 @@ class TaskService(BaseRepository):
         tasks = await self.get("author_id", author, all=True)
         return tasks
 
-    async def get_all_read(self, user_id: UUID) -> list[Task]:
-        permissions = await self.permission.get_all(user_id)
+    async def get_all_read(self, user_login: str) -> list[Task]:
+        permissions = await self.permission.get_all(user_login)
         permissions_task = []
         for perm in permissions:
             task_id = perm["task_id"]
@@ -73,13 +73,13 @@ class PermissionService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get(self, task_id: UUID, user_id: UUID, permission: str):
+    async def get(self, task_id: UUID, user_login: str, permission: str):
 
         try:
             result = await self.session.execute(
                 select(task_permissions).where(
                     task_permissions.c.task_id == task_id,
-                    task_permissions.c.user_id == user_id,
+                    task_permissions.c.user_login == user_login,
                     task_permissions.c.permission == permission,
                 )
             )
@@ -90,11 +90,13 @@ class PermissionService:
             logger.error(f"Error get permission: {e}")
             raise DatabaseException
 
-    async def get_all(self, user_id: UUID):
+    async def get_all(self, user_login: str):
 
         try:
             result = await self.session.execute(
-                select(task_permissions).where(task_permissions.c.user_id == user_id)
+                select(task_permissions).where(
+                    task_permissions.c.user_login == user_login
+                )
             )
 
             return result.mappings().all()
@@ -103,8 +105,8 @@ class PermissionService:
             logger.error(f"Error get all permission from user id: {e}")
             raise DatabaseException
 
-    async def add(self, task_id: UUID, user_id: UUID, permission: str):
-        existing_permission = await self.get(task_id, user_id, permission)
+    async def add(self, task_id: UUID, user_login: str, permission: str):
+        existing_permission = await self.get(task_id, user_login, permission)
 
         if existing_permission:
             raise AlreadyExistsException(f"This permission for user already exists.")
@@ -112,12 +114,12 @@ class PermissionService:
         try:
             edded_permission = await self.session.execute(
                 insert(task_permissions).values(
-                    task_id=task_id, user_id=user_id, permission=permission
+                    task_id=task_id, user_login=user_login, permission=permission
                 )
             )
             await self.session.commit()
             logger.info(
-                f"Granted permission {permission} to user {user_id} for task {task_id}."
+                f"Granted permission {permission} to user {user_login} for task {task_id}."
             )
             return edded_permission
 
@@ -125,9 +127,9 @@ class PermissionService:
             logger.error(f"Error add permission: {e}")
             raise DatabaseException
 
-    async def delete(self, task_id: UUID, user_id: UUID, permission: str):
+    async def delete(self, task_id: UUID, user_login: str, permission: str):
 
-        existing_permission = self.get(task_id, user_id, permission)
+        existing_permission = self.get(task_id, user_login, permission)
 
         if not existing_permission:
             raise NotFoundException("Permission for user not found")
@@ -136,7 +138,7 @@ class PermissionService:
             await self.session.execute(
                 delete(task_permissions).where(
                     task_permissions.c.task_id == task_id,
-                    task_permissions.c.user_id == user_id,
+                    task_permissions.c.user_login == user_login,
                     task_permissions.c.permission == permission,
                 )
             )

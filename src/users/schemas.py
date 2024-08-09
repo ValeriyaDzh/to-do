@@ -24,7 +24,6 @@ class CreateUser(BaseModel):
 
 
 class ShowUser(BaseModel):
-    id: UUID
     login: str
 
     class Config:
