@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, status, Depends
 
-from src.tasks.dependencies import get_task_service, valid_author_tasks
+from src.tasks.dependencies import get_task_service, valid_author_tasks, valid_task_id
+from src.exceptions import PermissionDeniedException
 from src.tasks.models import Task
 from src.tasks.schemas import CreateTask, ShowTask, UpdateTask, Permission
 from src.tasks.services import TaskService
@@ -20,7 +21,11 @@ async def users_tasks(
     user: User = Depends(get_current_user),
     task_service: TaskService = Depends(get_task_service),
 ):
-    return await task_service.get_all(user.id)
+    user_tasks = await task_service.get_all(user.id)
+    permissions_tasks = await task_service.get_all_read(user.id)
+    all_tasks = {task.id: task for task in user_tasks + permissions_tasks}.values()
+
+    return all_tasks
 
 
 @task_router.post(
@@ -39,10 +44,16 @@ async def create_task(
 )
 async def edit_task(
     task_data: UpdateTask,
-    task: Task = Depends(valid_author_tasks),
+    user: User = Depends(get_current_user),
+    task: Task = Depends(valid_task_id),
     task_service: TaskService = Depends(get_task_service),
 ):
-    return await task_service.update(task.id, task_data)
+    if task.author_id == user.id or task_service.permission.get(
+        task.id, user.id, "edit"
+    ):
+        return await task_service.update(task.id, task_data)
+    else:
+        raise PermissionDeniedException
 
 
 @task_router.delete(

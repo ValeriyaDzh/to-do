@@ -20,7 +20,6 @@ class TaskService(BaseRepository):
         super().__init__(model=Task, session=session)
 
     async def create(self, data: CreateTask, author: UUID) -> Task:
-
         data_dict = data.model_dump()
         data_dict["author_id"] = author
         created_task = await self.save(data_dict)
@@ -34,11 +33,20 @@ class TaskService(BaseRepository):
 
     async def get_all(self, author: UUID) -> list[Task]:
         tasks = await self.get("author_id", author, all=True)
-
         return tasks
 
-    async def update(self, id: UUID, data: UpdateTask) -> Task:
+    async def get_all_read(self, user_id: UUID) -> list[Task]:
+        permissions = await self.permission.get_all(user_id)
+        permissions_task = []
+        for perm in permissions:
+            task_id = perm["task_id"]
+            found_task = await self.get_by_id(task_id)
+            if found_task:
+                permissions_task.append(found_task)
 
+        return permissions_task
+
+    async def update(self, id: UUID, data: UpdateTask) -> Task:
         updated_task_dict = data.model_dump(exclude_none=True)
         try:
             data_update = (
@@ -76,10 +84,23 @@ class PermissionService:
                 )
             )
 
-            return result.fetchone()
+            return result.scalar_one_or_none()
 
         except Exception as e:
             logger.error(f"Error get permission: {e}")
+            raise DatabaseException
+
+    async def get_all(self, user_id: UUID):
+
+        try:
+            result = await self.session.execute(
+                select(task_permissions).where(task_permissions.c.user_id == user_id)
+            )
+
+            return result.mappings().all()
+
+        except Exception as e:
+            logger.error(f"Error get all permission from user id: {e}")
             raise DatabaseException
 
     async def add(self, task_id: UUID, user_id: UUID, permission: str):
