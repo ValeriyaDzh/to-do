@@ -26,7 +26,7 @@ class ShowTask(TaskBase):
     is_done: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UpdateTask(TaskBase):
@@ -46,4 +46,4 @@ class Permission(BaseModel):
         return value
 
     class Config:
-        orm_mode = True
+        from_attributes = True

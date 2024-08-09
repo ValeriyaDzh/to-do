@@ -49,7 +49,7 @@ async def edit_task(
     task: Task = Depends(valid_task_id),
     task_service: TaskService = Depends(get_task_service),
 ):
-    if task.author_id == user.id or task_service.permission.get(
+    if task.author_id == user.id or await task_service.permission.get(
         task.id, user.login, "edit"
     ):
         return await task_service.update(task.id, task_data)
