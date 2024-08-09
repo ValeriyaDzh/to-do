@@ -97,3 +97,18 @@ async def test_edit_task_exception(
     assert response.status_code == status
 
     assert detail in response.json()["detail"]
+
+
+@pytest.mark.anyio
+async def test_add_task_permission(api_client: AsyncClient, mock_jwt_decode):
+    mock_jwt_decode.return_value = {"sub": "test"}
+
+    data = {"user_login": "john_doe", "permission": "edit"}
+    response = await api_client.post(
+        f"api/task/1c9e02ef-f0b0-4336-beb5-aade2e704547/permissions",
+        headers={"Authorization": "Bearer testtoken"},
+        json=data,
+    )
+
+    assert response.status_code == 200
+    assert data["user_login"] in response.json()["message"]
