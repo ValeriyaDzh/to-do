@@ -1,9 +1,11 @@
+from uuid import UUID
+
 from pydantic import BaseModel, field_validator
+
 from src.exceptions import UnprocessableException
 
 
 class CreateUser(BaseModel):
-
     login: str
     password: str
 
@@ -22,11 +24,13 @@ class CreateUser(BaseModel):
 
 
 class ShowUser(BaseModel):
-
+    id: UUID
     login: str
+
+    class Config:
+        orm_mode = True
 
 
 class Token(BaseModel):
-
     access_token: str
     token_type: str
